@@ -1,0 +1,28 @@
+name: Deploy to DevA
+
+on:
+  push:
+    branches:
+      - KioskBranch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Install Salesforce CLI
+        run: |
+          npm install sfdx-cli --global
+          sfdx --version
+
+      - name: Authenticate to DevA
+        run: echo "${{ secrets.DEVA_AUTH_URL }}" > authfile.txt
+
+      - name: Store auth in CLI
+        run: sfdx auth:sfdxurl:store -f authfile.txt -a DevA
+
+      - name: Deploy to DevA
+        run: sfdx force:source:deploy -u DevA -p force-app -w 10
