@@ -22,7 +22,7 @@ jobs:
         run: echo "${{ secrets.DEVA_AUTH_URL }}" > authfile.txt
 
       - name: Store auth in CLI
-        run: sfdx auth:sfdxurl:store -f authfile.txt -a DevA
+        run: sfdx force:auth:sfdxurl:store -f authfile.txt -a DevA
 
       - name: Deploy to DevA
         run: sfdx force:source:deploy -u DevA -p force-app -w 10
