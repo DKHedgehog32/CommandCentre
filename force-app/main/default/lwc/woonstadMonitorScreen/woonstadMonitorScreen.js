@@ -1,6 +1,6 @@
 import { LightningElement, track } from 'lwc';
 import getAcceptedVisitors from '@salesforce/apex/WoonstadMonitorController.getAcceptedVisitors';
-import soundFile from '@salesforce/resourceUrl/woonstad_alert'; // Static Resource
+//import soundFile from '@salesforce/resourceUrl/woonstad_alert'; // Static Resource//
 
 export default class WoonstadMonitorScreen extends LightningElement {
     @track acceptedVisitors = [];
