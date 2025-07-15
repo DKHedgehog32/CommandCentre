@@ -20,7 +20,7 @@
     padding-top: 10cm;
     min-height: 100vh;
     background-color: #0061cd;
-    overflow: hidden; /* prevent scrolling */
+    overflow: hidden;
 }
 
 /* --- FORM BOX --- */
@@ -28,7 +28,7 @@
     background-color: #f0f2f5;
     padding: 3rem;
     border-radius: 1rem;
-    width: 1200px; /* wider */
+    width: 1200px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
@@ -65,17 +65,17 @@
 
 /* --- OVERRIDE LIGHTNING BUTTON --- */
 .submit-button .slds-button_brand {
-    background: #85e3f9 !important;        /* Solid background */
-    color: #3f6f8f !important;             /* Text color */
-    font-size: 1.8rem !important;          /* Font size */
+    background: #85e3f9 !important;
+    color: #3f6f8f !important;
+    font-size: 1.8rem !important;
     font-weight: bold !important;
     padding: 1rem 3rem !important;
     border: none !important;
     border-radius: 1.5rem !important;
-    box-shadow: none !important;          /* Removes SLDS glossy shadow */
+    box-shadow: none !important;
     width: 100% !important;
     max-width: 300px;
-    background-image: none !important;    /* ✅ Removes gloss effect */
+    background-image: none !important;
 }
 
 /* --- BUTTON HOVER --- */

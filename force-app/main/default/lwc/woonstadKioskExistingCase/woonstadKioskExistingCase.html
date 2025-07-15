@@ -1,87 +1,70 @@
 <template>
     <div class="kiosk-form-container">
-        <!-- Logo -->
+        <!-- Logo linksboven -->
         <div class="logo-top-left">
             <img src={logoUrl} alt="Woonstad Rotterdam Logo" />
         </div>
 
-        <!-- Form Card -->
+        <!-- Invoervelden -->
         <div class="form-card">
-            <!-- Step 1: Address Search -->
-            <template if:false={showAccountStep}>
-                <lightning-input
-                    label="Straatnaam"
-                    value={street}
-                    onchange={handleStreetChange}>
-                </lightning-input>
+            <!-- Postcode -->
+            <lightning-input
+                label="Postcode (bijv. 1234AB)"
+                value={postalCode}
+                onchange={handlePostalCodeChange}>
+            </lightning-input>
 
-                <lightning-input
-                    label="Huisnummer"
-                    value={houseNumber}
-                    onchange={handleHouseNumberChange}>
-                </lightning-input>
+            <!-- Huisnummer -->
+            <lightning-input
+                label="Huisnummer"
+                value={houseNumber}
+                onchange={handleHouseNumberChange}>
+            </lightning-input>
 
-                <lightning-input
-                    label="Postcode (bijv. 1234AB)"
-                    value={postalCode}
-                    onchange={handlePostalCodeChange}>
-                </lightning-input>
+            <!-- Geboortedatum -->
+            <lightning-input
+                type="date"
+                label="Geboortedatum"
+                value={birthdate}
+                onchange={handleBirthdateChange}>
+            </lightning-input>
 
-                <div class="submit-button">
-                    <lightning-button label="Zoeken" onclick={handleAddressSearch}></lightning-button>
-                </div>
-            </template>
+            <!-- Zoekknop -->
+            <div class="submit-button">
+                <lightning-button label="Zoeken" onclick={handleAddressSearch}></lightning-button>
+            </div>
 
-            <!-- Step 1b: Multiple Address Selection -->
+            <!-- Meerdere adressen gevonden -->
             <template if:true={multipleAddresses}>
                 <p style="grid-column: span 2;">Meerdere adressen gevonden. Kies één:</p>
                 <template for:each={addressOptions} for:item="addr">
                     <div key={addr.Id} style="grid-column: span 2;">
-                        <lightning-input type="radio" name="addressSelect" label={addr.Name} value={addr.Id} onchange={handleAddressSelect}></lightning-input>
+                        <lightning-input 
+                            type="radio" 
+                            name="addressSelect" 
+                            label={addr.Name} 
+                            value={addr.Id} 
+                            onchange={handleAddressSelect}>
+                        </lightning-input>
                     </div>
                 </template>
             </template>
 
-            <!-- Step 2: Account Match -->
-            <template if:true={showAccountStep}>
-                <lightning-input
-                    label="Achternaam"
-                    value={lastName}
-                    onchange={handleLastNameChange}>
-                </lightning-input>
-
-                <lightning-input
-                    type="date"
-                    label="Geboortedatum"
-                    value={birthdate}
-                    onchange={handleBirthdateChange}>
-                </lightning-input>
-
-                <lightning-input
-                    label="Telefoonnummer"
-                    value={phone}
-                    onchange={handlePhoneChange}>
-                </lightning-input>
-
-                <div class="submit-button">
-                    <lightning-button label="Verifieer Gegevens" onclick={handleFinalVerification}></lightning-button>
-                </div>
-            </template>
-
-            <!-- Step 3: Case Results -->
-            <template if:true={cases.length}>
+            <!-- Openstaande dossiers tonen -->
+            <template if:true={hasCases}>
                 <p style="grid-column: span 2;">Openstaande dossiers:</p>
                 <lightning-datatable
                     key-field="caseId"
                     data={cases}
                     columns={columns}
+                    hide-checkbox-column
                     style="grid-column: span 2;">
                 </lightning-datatable>
             </template>
 
-            <!-- Error Message -->
+            <!-- Foutmelding -->
             <template if:true={errorMessage}>
-                <div class="error" style="grid-column: span 2;">{errorMessage}</div>
+                <div class="error" style="grid-column: span 2; color: red;">{errorMessage}</div>
             </template>
         </div>
     </div>

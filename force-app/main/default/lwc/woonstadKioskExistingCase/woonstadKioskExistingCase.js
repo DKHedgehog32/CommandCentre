@@ -8,22 +8,27 @@ export default class WoonstadKioskExistingCase extends LightningElement {
     @track street = '';
     @track houseNumber = '';
     @track postalCode = '';
-    @track lastName = '';
     @track birthdate = '';
-    @track phone = '';
 
     @track addressOptions = [];
     @track selectedAddressId = '';
     @track cases = [];
     @track errorMessage = '';
-    @track showAccountStep = false;
     @track multipleAddresses = false;
+    @track showCaseTable = false;
+
     searchAttempts = 0;
+    maxSearchAttempts = 4;
 
     columns = [
-        { label: 'Case Nummer', fieldName: 'caseNumber' },
-        { label: 'Onderwerp', fieldName: 'subject' }
+        { label: 'Zaak Nr.', fieldName: 'caseNumber' },
+        { label: 'Datum', fieldName: 'createdDate' },
+        { label: 'Zaak Type', fieldName: 'subject' }
     ];
+
+    get hasCases() {
+        return this.cases && this.cases.length > 0;
+    }
 
     handleStreetChange(e) {
         this.street = e.target.value;
@@ -37,97 +42,80 @@ export default class WoonstadKioskExistingCase extends LightningElement {
         this.postalCode = e.target.value.replace(/\s/g, '').toUpperCase();
     }
 
-    handleLastNameChange(e) {
-        this.lastName = e.target.value;
-    }
-
     handleBirthdateChange(e) {
         this.birthdate = e.target.value;
     }
 
-    handlePhoneChange(e) {
-        this.phone = e.target.value;
-    }
-
     handleAddressSearch() {
         this.errorMessage = '';
-        this.showAccountStep = false;
+        this.showCaseTable = false;
         this.cases = [];
 
-        if (!this.street || !this.houseNumber || !this.postalCode.match(/^\d{4}[A-Z]{2}$/)) {
-            this.errorMessage = 'Vul een geldige straat, huisnummer en postcode (1234AB) in.';
+        if (!this.postalCode.match(/^\d{4}[A-Z]{2}$/)) {
+            this.errorMessage = 'Voer een geldige postcode in (1234AB zonder spatie).';
             return;
         }
 
+        if (!this.houseNumber || !this.birthdate) {
+            this.errorMessage = 'Vul zowel huisnummer als geboortedatum in.';
+            return;
+        }
+
+        this.searchAttempts++;
+
         findCasesByAddressAndPerson({
-            street: this.street,
-            houseNumber: this.houseNumber,
             postalCode: this.postalCode,
-            lastName: null,
-            birthdate: null,
-            phone: null
+            houseNumber: this.houseNumber,
+            birthdate: this.birthdate
         })
         .then(result => {
-            if (result.length === 1) {
+            if (result && result.length === 1) {
                 this.selectedAddressId = result[0].addressId;
-                this.showAccountStep = true;
-            } else if (result.length > 1) {
+                this.cases = result;
+                this.showCaseTable = true;
+            } else if (result && result.length > 1) {
                 this.addressOptions = result.map(a => ({
                     Id: a.addressId,
                     Name: a.addressName
                 }));
                 this.multipleAddresses = true;
             } else {
-                this.searchAttempts++;
-                if (this.searchAttempts >= 4) {
+                this.errorMessage = 'Geen match gevonden.';
+                if (this.searchAttempts >= this.maxSearchAttempts) {
                     this.dispatchEvent(new CustomEvent('maxaddresssearchretries', {
-    bubbles: true,
-    composed: true
-}));
-                } else {
-                    this.errorMessage = 'Geen adressen gevonden.';
+                        bubbles: true,
+                        composed: true
+                    }));
                 }
             }
         })
-        .catch(err => {
-            this.errorMessage = 'Fout bij zoeken van adressen.';
-            console.error(err);
+        .catch(error => {
+            this.errorMessage = 'Fout bij het zoeken van adressen of dossiers.';
+            console.error(error);
         });
     }
 
     handleAddressSelect(e) {
         this.selectedAddressId = e.target.value;
-        this.showAccountStep = true;
-        this.multipleAddresses = false;
-    }
-
-    handleFinalVerification() {
-        this.errorMessage = '';
-
-        if (!this.lastName || !this.birthdate || !this.phone) {
-            this.errorMessage = 'Vul alstublieft alle velden in.';
-            return;
-        }
 
         findCasesByAddressAndPerson({
-            street: null,
-            houseNumber: null,
-            postalCode: null,
-            addressId: this.selectedAddressId,
-            lastName: this.lastName,
+            postalCode: this.postalCode,
+            houseNumber: this.houseNumber,
             birthdate: this.birthdate,
-            phone: this.phone
+            selectedAddressId: this.selectedAddressId
         })
         .then(result => {
-            if (result.length > 0) {
+            if (result && result.length > 0) {
                 this.cases = result;
+                this.showCaseTable = true;
+                this.multipleAddresses = false;
             } else {
-                this.errorMessage = 'Geen bijbehorende dossiers gevonden.';
+                this.errorMessage = 'Geen dossiers gevonden voor dit adres en geboortedatum.';
             }
         })
-        .catch(err => {
-            this.errorMessage = 'Fout bij zoeken van dossiers.';
-            console.error(err);
+        .catch(error => {
+            this.errorMessage = 'Fout bij het ophalen van dossiers.';
+            console.error(error);
         });
     }
 }

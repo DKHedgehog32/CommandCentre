@@ -1,124 +1,110 @@
 public with sharing class ExistingDossierService {
 
+    public class AddressSearchRequest {
+        @InvocableVariable public String street;
+        @InvocableVariable public String houseNumber;
+        @InvocableVariable public String postalCode;
+        @InvocableVariable public String birthdate;
+    }
+
     public class DossierResponse {
-        @AuraEnabled public String addressId;
-        @AuraEnabled public String addressName;
-        @AuraEnabled public Id accountId;
-        @AuraEnabled public String accountName;
-        @AuraEnabled public Id caseId;
-        @AuraEnabled public String caseNumber;
-        @AuraEnabled public String subject;
+        @InvocableVariable public Id addressId;
+        @InvocableVariable public String addressName;
+        @InvocableVariable public Id caseId;
+        @InvocableVariable public String caseNumber;
+        @InvocableVariable public String subject;
+        @InvocableVariable public String createdDate; // NEW
     }
 
     @AuraEnabled(cacheable=true)
     public static List<DossierResponse> findCasesByAddressAndPerson(
-        String street,
-        String houseNumber,
         String postalCode,
-        String addressId,
-        String lastName,
-        Date birthdate,
-        String phone
+        String houseNumber,
+        String birthdate,
+        String selectedAddressId
     ) {
-        List<DossierResponse> results = new List<DossierResponse>();
+        List<DossierResponse> result = new List<DossierResponse>();
 
-        // STAP 1: Adres zoeken op basis van straat, huisnummer en postcode
-        List<Address__c> addressMatches = new List<Address__c>();
-        if (addressId == null) {
-            addressMatches = [
+        if (String.isBlank(postalCode) || String.isBlank(houseNumber)) return result;
+
+        List<Address__c> addresses = new List<Address__c>();
+
+        if (String.isNotBlank(selectedAddressId)) {
+            addresses = [
                 SELECT Id, Name
                 FROM Address__c
-                WHERE Street__c = :street
-                AND House_Number__c = :houseNumber
-                AND Postal_Code__c = :postalCode
+                WHERE Id = :selectedAddressId
             ];
-
-            for (Address__c addr : addressMatches) {
-                DossierResponse res = new DossierResponse();
-                res.addressId = addr.Id;
-                res.addressName = addr.Name;
-                results.add(res);
-            }
-            return results;
+        } else {
+            addresses = [
+                SELECT Id, Name
+                FROM Address__c
+                WHERE Postal_Code__c = :postalCode
+                AND House_Number__c = :houseNumber
+            ];
         }
 
-        // STAP 2: Accounts ophalen via Account_Address__c
-        List<Account_Address__c> accountAddressLinks = [
-            SELECT Account__c
+        if (addresses.isEmpty()) return result;
+
+        Set<Id> addressIds = new Set<Id>();
+        for (Address__c a : addresses) {
+            addressIds.add(a.Id);
+        }
+
+        List<Account_Address__c> accountLinks = [
+            SELECT Account__c, Address__c
             FROM Account_Address__c
-            WHERE Address__c = :addressId
+            WHERE Address__c IN :addressIds
         ];
 
         Set<Id> accountIds = new Set<Id>();
-        for (Account_Address__c link : accountAddressLinks) {
-            if (link.Account__c != null) {
-                accountIds.add(link.Account__c);
-            }
+        for (Account_Address__c link : accountLinks) {
+            accountIds.add(link.Account__c);
         }
 
-        if (accountIds.isEmpty()) return results;
+        if (accountIds.isEmpty()) return result;
 
-        // STAP 3: Match op achternaam, geboortedatum en telefoonnummer
-        List<Account> matchedAccounts = [
-            SELECT Id, Name, Phone, PersonMobilePhone, PersonBirthdate, LastName
+        List<Account> matchingAccounts = [
+            SELECT Id, PersonBirthdate
             FROM Account
             WHERE Id IN :accountIds
         ];
 
-        Account matchingAccount;
-        for (Account acc : matchedAccounts) {
-            Boolean phoneMatch = (acc.Phone != null && acc.Phone.trim() == phone.trim())
-                || (acc.PersonMobilePhone != null && acc.PersonMobilePhone.trim() == phone.trim());
-            Boolean nameMatch = acc.LastName != null && acc.LastName.equalsIgnoreCase(lastName);
-            Boolean birthdateMatch = acc.PersonBirthdate != null && acc.PersonBirthdate == birthdate;
+        Date birthDateInput;
+        try {
+            birthDateInput = Date.valueOf(birthdate);
+        } catch (Exception e) {
+            return result;
+        }
 
-            if (phoneMatch && nameMatch && birthdateMatch) {
-                matchingAccount = acc;
+        Id matchedAccountId;
+        for (Account acc : matchingAccounts) {
+            if (acc.PersonBirthdate == birthDateInput) {
+                matchedAccountId = acc.Id;
                 break;
             }
         }
 
-        if (matchingAccount == null) {
-            return results; // Geen match
-        }
+        if (matchedAccountId == null) return result;
 
-        // STAP 4: Zoek openstaande cases
         List<Case> openCases = [
-            SELECT Id, CaseNumber, Subject, Status
+            SELECT Id, CaseNumber, Subject, Status, CreatedDate
             FROM Case
-            WHERE AccountId = :matchingAccount.Id
+            WHERE AccountId = :matchedAccountId
             AND Status NOT IN ('Closed-Accepted', 'Closed-Rejected')
-            ORDER BY CreatedDate DESC
         ];
 
-        if (openCases.isEmpty()) {
-            // Geen bestaande case → nieuwe aanmaken
-            Case newCase = new Case(
-                AccountId = matchingAccount.Id,
-                Subject = 'Nieuwe aanmelding via kiosk',
-                Origin = 'Kiosk'
-            );
-            insert newCase;
-
-            DossierResponse newRes = new DossierResponse();
-            newRes.accountId = matchingAccount.Id;
-            newRes.accountName = matchingAccount.Name;
-            newRes.caseId = newCase.Id;
-            newRes.caseNumber = newCase.CaseNumber;
-            newRes.subject = newCase.Subject;
-            results.add(newRes);
-        } else {
-            for (Case c : openCases) {
-                DossierResponse res = new DossierResponse();
-                res.accountId = matchingAccount.Id;
-                res.accountName = matchingAccount.Name;
-                res.caseId = c.Id;
-                res.caseNumber = c.CaseNumber;
-                res.subject = c.Subject;
-                results.add(res);
-            }
+        for (Case c : openCases) {
+            DossierResponse dr = new DossierResponse();
+            dr.addressId = addresses[0].Id;
+            dr.addressName = addresses[0].Name;
+            dr.caseId = c.Id;
+            dr.caseNumber = c.CaseNumber;
+            dr.subject = c.Subject;
+            dr.createdDate = String.valueOf(c.CreatedDate.date()); // Only date
+            result.add(dr);
         }
 
-        return results;
+        return result;
     }
 }
