@@ -1,0 +1,64 @@
+.command-centre-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 4rem;
+    background-color: #ffffff;
+    min-height: calc(100vh + 200px);
+    gap: 4rem;
+    box-sizing: border-box;
+}
+
+.tile {
+    width: 300px;
+    height: 160px;
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-align: center;
+}
+
+.tile:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.tile-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: inherit;
+}
+
+.tile-label {
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.tile-icon lightning-icon {
+    --slds-c-icon-color-foreground-default: white;
+}
+
+/* Woonstad Color Theme */
+.tile-blue {
+    background-color: #0061cd;
+    color: #ffffff;
+}
+
+.tile-lightblue {
+    background-color: #85e3f9;
+    color: #003e7e;
+}
+
+.tile-lightgreen {
+    background-color: #d1f5e0;
+    color: #006644;
+}

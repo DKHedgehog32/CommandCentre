@@ -1,0 +1,22 @@
+<template>
+    <div class="command-centre-container">
+        <div class="tile tile-blue" onclick={handleTileClick} data-target="zoekKlanten">
+            <div class="tile-content">
+                <lightning-icon icon-name="utility:search" alternative-text="Zoek" size="large" class="tile-icon"></lightning-icon>
+                <span class="tile-label">Zoek naar klanten</span>
+            </div>
+        </div>
+        <div class="tile tile-lightblue" onclick={handleTileClick} data-target="aanvraag">
+            <div class="tile-content">
+                <lightning-icon icon-name="utility:form" alternative-text="Aanvraag" size="large" class="tile-icon"></lightning-icon>
+                <span class="tile-label">Ik heb een aanvraag</span>
+            </div>
+        </div>
+        <div class="tile tile-lightgreen" onclick={handleTileClick} data-target="vraag">
+            <div class="tile-content">
+                <lightning-icon icon-name="utility:question" alternative-text="Vraag" size="large" class="tile-icon"></lightning-icon>
+                <span class="tile-label">Ik heb een vraag</span>
+            </div>
+        </div>
+    </div>
+</template>
