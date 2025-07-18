@@ -1,0 +1,56 @@
+<template>
+  <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open woonstad-modal">
+    <div class="slds-modal__container woonstad-modal-container">
+
+      <!-- 🔷 Modal Header -->
+      <header class="slds-modal__header">
+        <div class="search-header-bar">
+          <img src={logoUrl} alt="Woonstad Rotterdam Logo" />
+          <h1 class="search-header-title">Nieuwe klant aanmaken</h1>
+        </div>
+      </header>
+
+      <!-- 🔹 Modal Content -->
+      <div class="slds-modal__content modal-flex-content" style="background: white;">
+        <div class="modal-body-content slds-p-around_medium">
+
+          <!-- ✅ Stepper -->
+          <div class="woonstad-stepper">
+            <template for:each={stepsWithClasses} for:item="step">
+              <div key={step.number} class={step.stepClass}>
+                <div class={step.circleClass}>{step.number}</div>
+                <div class="label">{step.label}</div>
+              </div>
+            </template>
+          </div>
+
+          <div class="stepper-line"></div>
+
+          <!-- 🔙 Back to Search Link -->
+          <div class="search-header-row">
+  <div class="back-link" onclick={handleBackToSearch}>
+    <lightning-icon icon-name="utility:back" size="xx-small" class="back-arrow-icon"></lightning-icon>
+    <span>Terug naar Zoeken Klant</span>
+  </div>
+</div>
+
+          <!-- Tile selection -->
+          <div class="tile-row">
+            <div class="tile" onclick={handleCreateCompany}>Bedrijf aanmaken</div>
+            <div class="tile" onclick={handleCreatePerson}>Klant aanmaken</div>
+          </div>
+        </div>
+
+        <!-- Cancel button -->
+        <div class="cancel-wrapper">
+          <button class="cancel-button" onclick={handleCancel}>Annuleren</button>
+        </div>
+      </div>
+
+      <footer class="slds-modal__footer"></footer>
+    </div>
+  </section>
+
+  <!-- 🔘 Backdrop -->
+  <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

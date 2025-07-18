@@ -1,0 +1,86 @@
+<template>
+    <!-- 🔵 Modal Wrapper -->
+    <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open woonstad-modal">
+        <div class="slds-modal__container woonstad-modal-container">
+
+            <!-- 🔷 Modal Header -->
+            <header class="slds-modal__header">
+                <div class="search-header-bar">
+                    <img src={logoUrl} alt="Woonstad Rotterdam Logo" />
+                    <h1 class="search-header-title">Zoek naar klanten</h1>
+                </div>
+            </header>
+
+            <!-- 🔹 Modal Content -->
+            <div class="slds-modal__content slds-p-around_medium" style="background: white; min-height: 300px;">
+                <!-- Back link -->
+                <div class="search-header-row">
+                    <div class="back-link" onclick={goBack}>
+                        <lightning-icon icon-name="utility:back" size="x-small" class="back-arrow-icon"></lightning-icon>
+                        Terug naar de homepagina
+                    </div>
+                </div>
+
+                <!-- Search row -->
+                <div class="search-row">
+                    <div class="search-wrapper">
+                        <input
+                            class="search-input"
+                            type="text"
+                            value={searchTerm}
+                            placeholder="Welke klant zoek je"
+                            oninput={handleSearchTermChange}
+                            onkeydown={handleKeyDown}
+                        />
+                        <button class="search-button" onclick={searchAccounts}>
+                            <lightning-icon icon-name="utility:search" size="x-small" class="search-icon"></lightning-icon>
+                        </button>
+                    </div>
+
+                    <button class="create-button" onclick={createCustomer}>
+                        Klant aanmaken
+                        <lightning-icon icon-name="utility:forward" size="xx-small" class="forward-icon"></lightning-icon>
+                    </button>
+                </div>
+
+                <!-- ✅ Header row for results -->
+                <template if:true={accounts}>
+                    <div class="search-result search-result-header">
+                        <div class="result-col name">Naam</div>
+                        <div class="result-col birthdate">Geboortedatum</div>
+                        <div class="result-col phone">Telefoon</div>
+                        <div class="result-col iban">IBAN</div>
+                        <div class="result-col address">Adres</div>
+                        <div class="result-col postal">Postcode</div>
+                    </div>
+                </template>
+
+                <!-- Results -->
+                <template if:true={accounts}>
+                    <template for:each={accounts} for:item="acc">
+                        <div key={acc.Id} class="search-result" data-id={acc.Id} onclick={handleAccountClick}>
+                            <div class="result-col name">{acc.Name}</div>
+                            <div class="result-col birthdate">{acc.PersonBirthdate}</div>
+                            <div class="result-col phone">{acc.Phone}</div>
+                            <div class="result-col iban">{acc.MaskedIban}</div>
+                            <div class="result-col address">{acc.AddressName}</div>
+                            <div class="result-col postal">{acc.PostalCode}</div>
+                        </div>
+                    </template>
+                </template>
+
+                <template if:true={noResults}>
+                    <div class="no-results">Geen klanten gevonden.</div>
+                </template>
+            </div>
+
+            <!-- 🔸 Modal Footer -->
+            <footer class="slds-modal__footer">
+                <lightning-button label="Sluiten" onclick={goBack}></lightning-button>
+            </footer>
+        </div>
+    </section>
+
+    <!-- 🔘 Backdrop -->
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>

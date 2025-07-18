@@ -1,0 +1,212 @@
+/* --- Header Bar --- */
+.search-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background-color: #0061cd;
+    color: white;
+    padding: 1.25rem 2rem;
+    width: 100%;
+    box-sizing: border-box;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    gap: 1rem;
+}
+
+.search-header-bar img {
+    height: 32px;
+    width: auto;
+    opacity: 0.95;
+}
+
+.search-header-title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* --- Stepper --- */
+.woonstad-stepper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    margin: 1.5rem 2rem 1rem 2rem;
+    padding: 0;
+}
+
+.woonstad-stepper .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    text-align: center;
+    color: #7a7a7a;
+}
+
+.woonstad-stepper .circle {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background-color: #c0c0c0;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+}
+
+.woonstad-stepper .label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+/* Active step styles */
+.woonstad-stepper .step.active .circle {
+    background-color: #0061cd;
+}
+
+.woonstad-stepper .step.active .label {
+    font-weight: 600;
+    color: #001933;
+}
+
+.stepper-line {
+    height: 1px;
+    background-color: #dce3eb;
+    margin: 0 2rem 1.5rem 2rem;
+}
+
+/* --- Tiles --- */
+.tile-row {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    margin-bottom: 3rem;
+}
+
+.tile {
+    width: 300px;
+    height: 220px;
+    background-color: #85e3f9;
+    border-radius: 20px;
+    padding: 1rem;
+    display: flex;
+    align-items: flex-start;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: #003b75;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 97, 205, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tile:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 14px rgba(0, 97, 205, 0.3);
+}
+
+/* --- Cancel Button --- */
+.cancel-wrapper {
+    display: flex;
+    justify-content: flex-start;
+    padding-top: 1rem;
+    padding-bottom: 1.5rem;
+}
+
+.cancel-button {
+    background-color: #fff;
+    border: 2px solid #003b75;
+    color: #003b75;
+    padding: 0.6rem 1.4rem;
+    border-radius: 22px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.cancel-button:hover {
+    background-color: #f2f2f2;
+}
+
+/* --- Modal Container and Layout --- */
+.woonstad-modal-container {
+    max-width: 1000px;
+    min-width: 1000px;
+    height: 750px !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border-radius: 1rem;
+    background-color: white;
+}
+
+.slds-modal__content {
+    flex: 1;
+    overflow-y: auto;
+    height: 70% !important;
+    padding: 2rem;
+}
+
+.slds-modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slds-modal.slds-fade-in-open {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: auto;
+    padding: 2rem;
+}
+
+.slds-modal__header {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+}
+
+.modal-flex-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.modal-body-content {
+    flex-grow: 1;
+}
+
+/* --- Back link --- */
+.search-header-row {
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+.back-link {
+    color: #0061cd;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+}
+
+.back-arrow-icon {
+    font-size: 1.2rem;
+    color: #0061cd;
+}
