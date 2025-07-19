@@ -1,11 +1,17 @@
 public with sharing class woonstadCustomerSearchController {
     @AuraEnabled(cacheable=true)
     public static List<AccountSearchResult> searchAccountsByName(String name) {
+        String search = name != null ? name.toLowerCase().replaceAll('[^a-zA-Z0-9]', '') : '';
+        if (String.isBlank(search)) {
+            return new List<AccountSearchResult>();
+        }
+
+        // Step 1: Get matching Accounts
         List<Account> accounts = [
-            SELECT Id, Name, PersonBirthdate, Phone
+            SELECT Id, Name, PersonBirthdate, Phone, PersonMobilePhone
             FROM Account
-            WHERE Name LIKE :('%' + name + '%')
-            LIMIT 10
+            ORDER BY LastModifiedDate DESC
+            LIMIT 200
         ];
 
         Set<Id> accountIds = new Set<Id>();
@@ -13,7 +19,7 @@ public with sharing class woonstadCustomerSearchController {
             accountIds.add(acc.Id);
         }
 
-        // Query Bank Accounts for matching Accounts
+        // Step 2: Fetch Bank Accounts
         Map<Id, String> accountToBankIban = new Map<Id, String>();
         for (Bank_Account__c ba : [
             SELECT Account__c, IBAN__c
@@ -21,12 +27,11 @@ public with sharing class woonstadCustomerSearchController {
             WHERE Account__c IN :accountIds
         ]) {
             if (String.isNotBlank(ba.IBAN__c) && ba.IBAN__c.length() >= 4) {
-                String masked = '*' + ba.IBAN__c.right(4);
-                accountToBankIban.put(ba.Account__c, masked);
+                accountToBankIban.put(ba.Account__c, '*' + ba.IBAN__c.right(4));
             }
         }
 
-        // Find primary, active address relations
+        // Step 3: Fetch Account_Address links
         Map<Id, Id> accountToAddressId = new Map<Id, Id>();
         for (Account_Address__c aa : [
             SELECT Account__c, Address__c
@@ -38,7 +43,7 @@ public with sharing class woonstadCustomerSearchController {
             accountToAddressId.put(aa.Account__c, aa.Address__c);
         }
 
-        // Fetch address details
+        // Step 4: Fetch Address details
         Map<Id, Address__c> addressMap = new Map<Id, Address__c>();
         if (!accountToAddressId.isEmpty()) {
             addressMap = new Map<Id, Address__c>([
@@ -48,24 +53,49 @@ public with sharing class woonstadCustomerSearchController {
             ]);
         }
 
-        // Combine results
+        // Step 5: Filter and build results
         List<AccountSearchResult> results = new List<AccountSearchResult>();
         for (Account acc : accounts) {
-            AccountSearchResult res = new AccountSearchResult();
-            res.Id = acc.Id;
-            res.Name = acc.Name;
-            res.PersonBirthdate = acc.PersonBirthdate;
-            res.Phone = acc.Phone;
-            res.MaskedIban = accountToBankIban.get(acc.Id);
+            String phone = acc.Phone != null ? acc.Phone.replaceAll('[^0-9]', '') : '';
+            String mobile = acc.PersonMobilePhone != null ? acc.PersonMobilePhone.replaceAll('[^0-9]', '') : '';
+            String birthdate = acc.PersonBirthdate != null ? String.valueOf(acc.PersonBirthdate) : '';
+            String maskedIban = accountToBankIban.get(acc.Id);
 
-            Id addrId = accountToAddressId.get(acc.Id);
-            if (addrId != null && addressMap.containsKey(addrId)) {
-                Address__c addr = addressMap.get(addrId);
-                res.AddressName = addr.Name;
-                res.PostalCode = addr.Postal_Code__c;
+            Address__c addr = null;
+            if (accountToAddressId.containsKey(acc.Id)) {
+                addr = addressMap.get(accountToAddressId.get(acc.Id));
             }
 
-            results.add(res);
+            String addressName = addr != null && addr.Name != null ? addr.Name.toLowerCase() : '';
+            String postal = addr != null && addr.Postal_Code__c != null
+                ? addr.Postal_Code__c.replaceAll('\\s+', '').toUpperCase()
+                : '';
+
+            // Create normalized string for search
+            String composite = (
+                acc.Name +
+                phone +
+                mobile +
+                birthdate +
+                (maskedIban != null ? maskedIban : '') +
+                addressName +
+                postal
+            ).toLowerCase();
+
+            if (composite.contains(search)) {
+                AccountSearchResult res = new AccountSearchResult();
+                res.Id = acc.Id;
+                res.Name = acc.Name;
+                res.PersonBirthdate = acc.PersonBirthdate;
+                res.Phone = acc.Phone;
+                res.PersonMobilePhone = acc.PersonMobilePhone;
+                res.MaskedIban = maskedIban;
+                if (addr != null) {
+                    res.AddressName = addr.Name;
+                    res.PostalCode = postal;
+                }
+                results.add(res);
+            }
         }
 
         return results;
@@ -76,6 +106,7 @@ public with sharing class woonstadCustomerSearchController {
         @AuraEnabled public String Name;
         @AuraEnabled public Date PersonBirthdate;
         @AuraEnabled public String Phone;
+        @AuraEnabled public String PersonMobilePhone;
         @AuraEnabled public String MaskedIban;
         @AuraEnabled public String AddressName;
         @AuraEnabled public String PostalCode;

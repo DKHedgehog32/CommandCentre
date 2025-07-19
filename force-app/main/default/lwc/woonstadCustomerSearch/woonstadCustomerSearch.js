@@ -1,14 +1,14 @@
 // woonstadCustomerSearch.js
 import { LightningElement, track } from 'lwc';
 import searchAccountsByName from '@salesforce/apex/WoonstadCustomerSearchController.searchAccountsByName';
-import LOGO from '@salesforce/resourceUrl/WSRLogo'; // 🔹 Add logo resource import
+import LOGO from '@salesforce/resourceUrl/WSRLogo';
 
 export default class WoonstadCustomerSearch extends LightningElement {
     @track searchTerm = '';
     @track accounts = [];
     @track noResults = false;
 
-    logoUrl = LOGO; // 🔹 Assign logo URL to use in template
+    logoUrl = LOGO;
 
     /**
      * Handle input change
@@ -27,25 +27,35 @@ export default class WoonstadCustomerSearch extends LightningElement {
     }
 
     /**
+     * Normalize search term: remove non-alphanumerics from phone/postal
+     */
+    normalizeSearchInput(input) {
+        if (!input) return '';
+        const raw = input.trim().toLowerCase();
+        const cleaned = raw.replace(/\s/g, ''); // Remove spaces
+        return cleaned;
+    }
+
+    /**
      * Apex search call
      */
     searchAccounts() {
-        const trimmed = this.searchTerm?.trim();
-        if (!trimmed) {
+        const input = this.normalizeSearchInput(this.searchTerm);
+
+        if (!input) {
             this.accounts = [];
             this.noResults = false;
             return;
         }
 
-        searchAccountsByName({ name: trimmed })
+        searchAccountsByName({ name: input })
             .then(result => {
-                // Enrich records with fallback values
                 this.accounts = result.map(acc => ({
                     Id: acc.Id,
                     Name: acc.Name,
                     PersonBirthdate: acc.PersonBirthdate || '',
                     Phone: acc.Phone || '',
-                    MaskedIban: acc.MaskedIban || '', // from Apex
+                    MaskedIban: acc.MaskedIban || '',
                     AddressName: acc.AddressName || '',
                     PostalCode: acc.PostalCode || ''
                 }));
@@ -80,8 +90,7 @@ export default class WoonstadCustomerSearch extends LightningElement {
      * Create customer — notify parent to switch modals
      */
     createCustomer() {
-        console.log('📣 Dispatching createnew event');
-        this.closeModal(); // Close current modal
+        this.closeModal();
         this.dispatchEvent(new CustomEvent('createnew'));
     }
 
@@ -91,10 +100,9 @@ export default class WoonstadCustomerSearch extends LightningElement {
     closeModal() {
         this.dispatchEvent(new CustomEvent('close'));
 
-        // Prevent duplicate backdrop issue
         const backdrops = document.querySelectorAll('.slds-backdrop.slds-backdrop_open');
         if (backdrops.length > 1) {
-            backdrops[backdrops.length - 1].remove(); // Remove the last added one
+            backdrops[backdrops.length - 1].remove();
         }
     }
 }
