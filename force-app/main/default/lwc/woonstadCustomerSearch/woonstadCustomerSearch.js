@@ -72,13 +72,40 @@ export default class WoonstadCustomerSearch extends LightningElement {
 
     // Show tooltip on hover
     handleMouseEnter(event) {
-        const hoveredId = event.currentTarget.dataset.id;
-        this.hoveredAccountId = hoveredId;
-        this.accounts = this.accounts.map(acc => ({
-            ...acc,
-            isHovered: acc.Id === hoveredId
-        }));
-    }
+    const hoveredId = event.currentTarget.dataset.id;
+    this.hoveredAccountId = hoveredId;
+
+    // Update hover state
+    this.accounts = this.accounts.map(acc => ({
+        ...acc,
+        isHovered: acc.Id === hoveredId
+    }));
+
+    // Delay to wait for the tooltip to render
+    setTimeout(() => {
+        const wrapper = this.template.querySelector(`div[data-id="${hoveredId}"]`);
+        const tooltip = wrapper?.querySelector('.case-tooltip-extended');
+
+        if (tooltip && wrapper) {
+            // Reset existing classes
+            tooltip.classList.remove('above', 'below');
+
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const tooltipHeight = tooltip.offsetHeight;
+            const buffer = 20; // Minimum space needed
+
+            const spaceAbove = wrapperRect.top;
+            const spaceBelow = window.innerHeight - wrapperRect.bottom;
+
+            // Determine placement
+            if (spaceAbove > tooltipHeight + buffer) {
+                tooltip.classList.add('above');
+            } else {
+                tooltip.classList.add('below');
+            }
+        }
+    }, 50); // slight delay to allow rendering
+}
 
     handleMouseLeave() {
         this.hoveredAccountId = null;

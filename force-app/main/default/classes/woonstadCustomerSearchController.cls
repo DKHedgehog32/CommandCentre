@@ -1,10 +1,15 @@
 public with sharing class woonstadCustomerSearchController {
     @AuraEnabled(cacheable=true)
     public static List<AccountSearchResult> searchAccountsByName(String name) {
-        String search = normalize(name);
-
-        if (String.isBlank(search) || search.length() < 2) {
+        if (String.isBlank(name) || name.length() < 2) {
             return new List<AccountSearchResult>();
+        }
+
+        List<String> searchTerms = new List<String>();
+        for (String term : name.trim().split('\\s+')) {
+            if (!String.isBlank(term)) {
+                searchTerms.add(normalize(term));
+            }
         }
 
         List<Account> accounts = [
@@ -44,7 +49,7 @@ public with sharing class woonstadCustomerSearchController {
         Map<Id, Address__c> addressMap = new Map<Id, Address__c>();
         if (!accountToAddressId.isEmpty()) {
             addressMap = new Map<Id, Address__c>([
-                SELECT Id, Name, Postal_Code__c
+                SELECT Id, Name, Postal_Code__c, Street__c
                 FROM Address__c
                 WHERE Id IN :accountToAddressId.values()
             ]);
@@ -83,7 +88,7 @@ public with sharing class woonstadCustomerSearchController {
             String fullName = acc.Name != null ? normalize(acc.Name) : '';
             String phone = acc.Phone != null ? acc.Phone.replaceAll('[^0-9]', '') : '';
             String mobile = acc.PersonMobilePhone != null ? acc.PersonMobilePhone.replaceAll('[^0-9]', '') : '';
-            String birthdate = acc.PersonBirthdate != null ? String.valueOf(acc.PersonBirthdate) : '';
+            String birthdate = acc.PersonBirthdate != null ? normalize(String.valueOf(acc.PersonBirthdate)) : '';
             String maskedIban = accountToBankIban.get(acc.Id);
 
             Address__c addr = null;
@@ -92,24 +97,33 @@ public with sharing class woonstadCustomerSearchController {
             }
 
             String addressName = addr != null && addr.Name != null ? normalize(addr.Name) : '';
-            String postal = addr != null && addr.Postal_Code__c != null
-                ? addr.Postal_Code__c.replaceAll('\\s+', '').toLowerCase()
-                : '';
+            String postal = addr != null && addr.Postal_Code__c != null ? normalize(addr.Postal_Code__c) : '';
+            String street = addr != null && addr.Street__c != null ? normalize(addr.Street__c) : '';
 
-            Boolean match = false;
+            // All searchable fields
+            List<String> fields = new List<String>{
+                first, middle, last, fullName, phone, mobile, birthdate, 
+                maskedIban != null ? normalize(maskedIban) : '',
+                addressName, postal, street
+            };
 
-            if (first.contains(search)) match = true;
-            else if (middle.contains(search)) match = true;
-            else if (last.contains(search)) match = true;
-            else if (fullName.contains(search)) match = true;
-            else if (normalize(birthdate).contains(search)) match = true;
-            else if (phone.contains(search)) match = true;
-            else if (mobile.contains(search)) match = true;
-            else if (maskedIban != null && normalize(maskedIban).contains(search)) match = true;
-            else if (addressName.contains(search)) match = true;
-            else if (postal.contains(search)) match = true;
+            // All terms must match at least one field
+            Boolean allMatch = true;
+            for (String term : searchTerms) {
+                Boolean termFound = false;
+                for (String field : fields) {
+                    if (!String.isBlank(field) && field.contains(term)) {
+                        termFound = true;
+                        break;
+                    }
+                }
+                if (!termFound) {
+                    allMatch = false;
+                    break;
+                }
+            }
 
-            if (match) {
+            if (allMatch) {
                 AccountSearchResult res = new AccountSearchResult();
                 res.Id = acc.Id;
                 res.Name = acc.Name;

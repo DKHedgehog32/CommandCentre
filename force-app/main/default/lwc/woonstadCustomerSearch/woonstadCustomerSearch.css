@@ -214,16 +214,26 @@
 
 .case-tooltip-extended {
     position: absolute;
-    bottom: 100%;
     left: 0;
-    margin-bottom: 0.75rem; /* Adds clear space between row and tooltip */
     background-color: white;
     border-radius: 0.5rem;
-    box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.15);
     padding: 1rem;
     z-index: 1000;
     width: 100%;
     border: 1px solid #d0dce7;
+}
+
+/* Tooltip above row */
+.case-tooltip-extended.above {
+    bottom: 100%;
+    margin-bottom: 0.5rem;
+}
+
+/* Tooltip below row */
+.case-tooltip-extended.below {
+    top: 100%;
+    margin-top: 0.5rem;
 }
 
 /* Tooltip Header Row */
