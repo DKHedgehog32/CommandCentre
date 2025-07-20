@@ -1,4 +1,3 @@
-// woonstadCustomerSearch.js
 import { LightningElement, track } from 'lwc';
 import searchAccountsByName from '@salesforce/apex/WoonstadCustomerSearchController.searchAccountsByName';
 import LOGO from '@salesforce/resourceUrl/WSRLogo';
@@ -7,42 +6,26 @@ export default class WoonstadCustomerSearch extends LightningElement {
     @track searchTerm = '';
     @track accounts = [];
     @track noResults = false;
+    hoveredAccountId = null;
 
     logoUrl = LOGO;
 
-    /**
-     * Handle input change
-     */
+    // Update search term as user types
     handleSearchTermChange(event) {
         this.searchTerm = event.target.value;
     }
 
-    /**
-     * Trigger search on Enter
-     */
+    // Search when user presses Enter
     handleKeyDown(event) {
         if (event.key === 'Enter') {
             this.searchAccounts();
         }
     }
 
-    /**
-     * Normalize search term: remove non-alphanumerics from phone/postal
-     */
-    normalizeSearchInput(input) {
-        if (!input) return '';
-        const raw = input.trim().toLowerCase();
-        const cleaned = raw.replace(/\s/g, ''); // Remove spaces
-        return cleaned;
-    }
-
-    /**
-     * Apex search call
-     */
+    // Perform search using Apex method
     searchAccounts() {
-        const input = this.normalizeSearchInput(this.searchTerm);
-
-        if (!input) {
+        const input = this.searchTerm?.trim();
+        if (!input || input.length < 3) {
             this.accounts = [];
             this.noResults = false;
             return;
@@ -50,15 +33,34 @@ export default class WoonstadCustomerSearch extends LightningElement {
 
         searchAccountsByName({ name: input })
             .then(result => {
-                this.accounts = result.map(acc => ({
-                    Id: acc.Id,
-                    Name: acc.Name,
-                    PersonBirthdate: acc.PersonBirthdate || '',
-                    Phone: acc.Phone || '',
-                    MaskedIban: acc.MaskedIban || '',
-                    AddressName: acc.AddressName || '',
-                    PostalCode: acc.PostalCode || ''
-                }));
+                console.log('✔️ Apex result:', JSON.stringify(result)); // Optional debug
+
+                // ❗ FIXED: Removed broken sort on CreatedDate (was causing result to fail silently)
+                const sorted = result; // or use .sort((a, b) => a.Name.localeCompare(b.Name)) if needed
+
+                this.accounts = sorted.map(acc => {
+                    let caseTooltip = 'Geen open zaken gevonden.';
+                    if (acc.Cases && acc.Cases.length > 0) {
+                        caseTooltip = acc.Cases.map(c =>
+                            `${c.CaseNumber || ''} - ${c.CaseReason || ''} - ${c.Status || ''} - ${c.WocasNumber || ''} - ${c.Subject || ''} - ${c.Description || ''}`
+                        ).join('\n');
+                    }
+
+                    return {
+                        Id: acc.Id,
+                        Name: acc.Name,
+                        PersonBirthdate: acc.PersonBirthdate || '',
+                        Phone: acc.Phone || '',
+                        MaskedIban: acc.MaskedIban || '',
+                        AddressName: acc.AddressName || '',
+                        PostalCode: acc.PostalCode || '',
+                        // CreatedDate was never returned from Apex, removed
+                        CaseSummaryTooltip: caseTooltip,
+                        Cases: acc.Cases || [],
+                        isHovered: false
+                    };
+                });
+
                 this.noResults = this.accounts.length === 0;
             })
             .catch(error => {
@@ -68,9 +70,25 @@ export default class WoonstadCustomerSearch extends LightningElement {
             });
     }
 
-    /**
-     * Open account and close modal
-     */
+    // Show tooltip on hover
+    handleMouseEnter(event) {
+        const hoveredId = event.currentTarget.dataset.id;
+        this.hoveredAccountId = hoveredId;
+        this.accounts = this.accounts.map(acc => ({
+            ...acc,
+            isHovered: acc.Id === hoveredId
+        }));
+    }
+
+    handleMouseLeave() {
+        this.hoveredAccountId = null;
+        this.accounts = this.accounts.map(acc => ({
+            ...acc,
+            isHovered: false
+        }));
+    }
+
+    // Open Account in new tab
     handleAccountClick(event) {
         const accountId = event.currentTarget.dataset.id;
         if (accountId) {
@@ -79,27 +97,19 @@ export default class WoonstadCustomerSearch extends LightningElement {
         this.closeModal();
     }
 
-    /**
-     * Return to home screen
-     */
+    // Close modal or go back
     goBack() {
         this.closeModal();
     }
 
-    /**
-     * Create customer — notify parent to switch modals
-     */
     createCustomer() {
         this.closeModal();
         this.dispatchEvent(new CustomEvent('createnew'));
     }
 
-    /**
-     * Utility to close modal and remove any leftover backdrop
-     */
+    // Utility to close modal
     closeModal() {
         this.dispatchEvent(new CustomEvent('close'));
-
         const backdrops = document.querySelectorAll('.slds-backdrop.slds-backdrop_open');
         if (backdrops.length > 1) {
             backdrops[backdrops.length - 1].remove();

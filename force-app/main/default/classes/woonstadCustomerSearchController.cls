@@ -1,14 +1,14 @@
 public with sharing class woonstadCustomerSearchController {
     @AuraEnabled(cacheable=true)
     public static List<AccountSearchResult> searchAccountsByName(String name) {
-        String search = name != null ? name.toLowerCase().replaceAll('[^a-zA-Z0-9]', '') : '';
-        if (String.isBlank(search)) {
+        String search = normalize(name);
+
+        if (String.isBlank(search) || search.length() < 2) {
             return new List<AccountSearchResult>();
         }
 
-        // Step 1: Get matching Accounts
         List<Account> accounts = [
-            SELECT Id, Name, PersonBirthdate, Phone, PersonMobilePhone
+            SELECT Id, Name, FirstName, MiddleName, LastName, PersonBirthdate, Phone, PersonMobilePhone
             FROM Account
             ORDER BY LastModifiedDate DESC
             LIMIT 200
@@ -19,7 +19,6 @@ public with sharing class woonstadCustomerSearchController {
             accountIds.add(acc.Id);
         }
 
-        // Step 2: Fetch Bank Accounts
         Map<Id, String> accountToBankIban = new Map<Id, String>();
         for (Bank_Account__c ba : [
             SELECT Account__c, IBAN__c
@@ -31,7 +30,6 @@ public with sharing class woonstadCustomerSearchController {
             }
         }
 
-        // Step 3: Fetch Account_Address links
         Map<Id, Id> accountToAddressId = new Map<Id, Id>();
         for (Account_Address__c aa : [
             SELECT Account__c, Address__c
@@ -43,7 +41,6 @@ public with sharing class woonstadCustomerSearchController {
             accountToAddressId.put(aa.Account__c, aa.Address__c);
         }
 
-        // Step 4: Fetch Address details
         Map<Id, Address__c> addressMap = new Map<Id, Address__c>();
         if (!accountToAddressId.isEmpty()) {
             addressMap = new Map<Id, Address__c>([
@@ -53,9 +50,37 @@ public with sharing class woonstadCustomerSearchController {
             ]);
         }
 
-        // Step 5: Filter and build results
+        Map<Id, List<CaseSummary>> accountToCases = new Map<Id, List<CaseSummary>>();
+        for (Case c : [
+            SELECT AccountId, CaseNumber, Case_Reason__c, Subject, Description,
+                   Request__r.Request_Status__c, Wocas_Subject_Number__c, Status
+            FROM Case
+            WHERE AccountId IN :accountIds
+            AND Status != 'Closed'
+            ORDER BY CreatedDate DESC
+            LIMIT 500
+        ]) {
+            if (!accountToCases.containsKey(c.AccountId)) {
+                accountToCases.put(c.AccountId, new List<CaseSummary>());
+            }
+
+            CaseSummary summary = new CaseSummary();
+            summary.CaseNumber = c.CaseNumber;
+            summary.CaseReason = c.Case_Reason__c;
+            summary.Status = c.Request__r != null ? c.Request__r.Request_Status__c : '';
+            summary.Subject = c.Subject;
+            summary.Description = c.Description;
+            summary.WocasNumber = c.Wocas_Subject_Number__c;
+
+            accountToCases.get(c.AccountId).add(summary);
+        }
+
         List<AccountSearchResult> results = new List<AccountSearchResult>();
         for (Account acc : accounts) {
+            String first = acc.FirstName != null ? normalize(acc.FirstName) : '';
+            String middle = acc.MiddleName != null ? normalize(acc.MiddleName) : '';
+            String last = acc.LastName != null ? normalize(acc.LastName) : '';
+            String fullName = acc.Name != null ? normalize(acc.Name) : '';
             String phone = acc.Phone != null ? acc.Phone.replaceAll('[^0-9]', '') : '';
             String mobile = acc.PersonMobilePhone != null ? acc.PersonMobilePhone.replaceAll('[^0-9]', '') : '';
             String birthdate = acc.PersonBirthdate != null ? String.valueOf(acc.PersonBirthdate) : '';
@@ -66,23 +91,25 @@ public with sharing class woonstadCustomerSearchController {
                 addr = addressMap.get(accountToAddressId.get(acc.Id));
             }
 
-            String addressName = addr != null && addr.Name != null ? addr.Name.toLowerCase() : '';
+            String addressName = addr != null && addr.Name != null ? normalize(addr.Name) : '';
             String postal = addr != null && addr.Postal_Code__c != null
-                ? addr.Postal_Code__c.replaceAll('\\s+', '').toUpperCase()
+                ? addr.Postal_Code__c.replaceAll('\\s+', '').toLowerCase()
                 : '';
 
-            // Create normalized string for search
-            String composite = (
-                acc.Name +
-                phone +
-                mobile +
-                birthdate +
-                (maskedIban != null ? maskedIban : '') +
-                addressName +
-                postal
-            ).toLowerCase();
+            Boolean match = false;
 
-            if (composite.contains(search)) {
+            if (first.contains(search)) match = true;
+            else if (middle.contains(search)) match = true;
+            else if (last.contains(search)) match = true;
+            else if (fullName.contains(search)) match = true;
+            else if (normalize(birthdate).contains(search)) match = true;
+            else if (phone.contains(search)) match = true;
+            else if (mobile.contains(search)) match = true;
+            else if (maskedIban != null && normalize(maskedIban).contains(search)) match = true;
+            else if (addressName.contains(search)) match = true;
+            else if (postal.contains(search)) match = true;
+
+            if (match) {
                 AccountSearchResult res = new AccountSearchResult();
                 res.Id = acc.Id;
                 res.Name = acc.Name;
@@ -92,13 +119,20 @@ public with sharing class woonstadCustomerSearchController {
                 res.MaskedIban = maskedIban;
                 if (addr != null) {
                     res.AddressName = addr.Name;
-                    res.PostalCode = postal;
+                    res.PostalCode = addr.Postal_Code__c;
+                }
+                if (accountToCases.containsKey(acc.Id)) {
+                    res.Cases = accountToCases.get(acc.Id);
                 }
                 results.add(res);
             }
         }
 
         return results;
+    }
+
+    private static String normalize(String value) {
+        return value != null ? value.toLowerCase().replaceAll('[^a-z0-9]', '') : '';
     }
 
     public class AccountSearchResult {
@@ -110,5 +144,15 @@ public with sharing class woonstadCustomerSearchController {
         @AuraEnabled public String MaskedIban;
         @AuraEnabled public String AddressName;
         @AuraEnabled public String PostalCode;
+        @AuraEnabled public List<CaseSummary> Cases;
+    }
+
+    public class CaseSummary {
+        @AuraEnabled public String CaseNumber;
+        @AuraEnabled public String CaseReason;
+        @AuraEnabled public String Status;
+        @AuraEnabled public String Subject;
+        @AuraEnabled public String Description;
+        @AuraEnabled public String WocasNumber;
     }
 }

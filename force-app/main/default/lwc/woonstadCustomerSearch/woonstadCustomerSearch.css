@@ -62,7 +62,6 @@
     width: 100%;
 }
 
-/* Search input wrapper */
 .search-wrapper {
     display: flex;
     align-items: center;
@@ -84,7 +83,6 @@
     padding: 0.3rem 0.5rem;
 }
 
-/* Search icon in circle */
 .search-button {
     border: none;
     background: #b2f0ff;
@@ -110,7 +108,6 @@
     font-size: 1.1rem;
 }
 
-/* Create customer button */
 .create-button {
     display: flex;
     align-items: center;
@@ -136,10 +133,52 @@
     --slds-c-icon-color-foreground-default: #003e7e;
 }
 
-/* Search results */
+/* --- Modal container sizing --- */
+.woonstad-modal-container {
+    width: 85vw;
+    max-width: 5000px;
+    min-width: 600px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border-radius: 1rem;
+}
+
+.slds-modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slds-modal__container {
+    margin: 0 auto;
+}
+
+.slds-modal.slds-fade-in-open {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: auto;
+    padding: 2rem;
+}
+
+.slds-modal__header {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+}
+
+/* --- Search result layout --- */
 .search-result {
+    display: grid;
+    grid-template-columns: 2fr 2fr 2fr 1fr 3fr 1fr;
+    align-items: center;
+    gap: 0.5rem;
     padding: 0.75rem;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
     background-color: #ffeef1;
     border-radius: 4px;
     cursor: pointer;
@@ -150,6 +189,79 @@
     background-color: #ffdde5;
 }
 
+.search-result-header {
+    font-weight: 600;
+    background-color: #f9d2db;
+    cursor: default;
+    margin-bottom: 0.5rem;
+}
+
+.result-col {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* --- Hover tooltip logic --- */
+.result-hover-wrapper {
+    position: relative;
+    margin-bottom: 0.5rem;
+}
+
+.result-hover-wrapper:hover {
+    margin-top: 2rem; /* creates room for the tooltip above */
+}
+
+.case-tooltip-extended {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 0.75rem; /* Adds clear space between row and tooltip */
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    z-index: 1000;
+    width: 100%;
+    border: 1px solid #d0dce7;
+}
+
+/* Tooltip Header Row */
+.tooltip-header-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1.5fr 2fr;
+    background-color: #0061cd;
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+/* Tooltip Case Rows */
+.tooltip-case-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1.5fr 2fr;
+    background-color: #eaf4ff;
+    color: #003e7e;
+    padding: 0.5rem;
+    border: 1px solid #c3d8eb; /* darker border for definition */
+    border-radius: 0.25rem;
+    margin-bottom: 0.3rem;
+}
+
+.tooltip-col.case-field {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Case list scrollable if long */
+.tooltip-case-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* No results fallback */
 .no-results {
     margin-top: 1rem;
     color: #999;
@@ -173,73 +285,6 @@
     }
 }
 
-/* --- Modal container sizing and centering --- */
-.woonstad-modal-container {
-    width: 85vw;
-    max-width: 5000px;
-    min-width: 600px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    border-radius: 1rem;
-}
-
-/* Force modal to vertical center */
-.slds-modal {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Avoid stretching full screen */
-.slds-modal__container {
-    margin: 0 auto;
-}
-
-/* Prevent background scroll */
-.slds-modal.slds-fade-in-open {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: auto;
-    padding: 2rem;
-}
-
-.slds-modal__header {
-    padding: 0;
-    margin: 0;
-    background: transparent;
-}
-
-/* --- Search result header and grid layout --- */
-.search-result {
-    display: grid;
-    grid-template-columns: 2fr 2fr 2fr 1fr 3fr 1fr;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    margin-top: 0.5rem;
-    background-color: #ffeef1;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.search-result:hover {
-    background-color: #ffdde5;
-}
-
-.search-result-header {
-    font-weight: 600;
-    background-color: #f9d2db;
-    cursor: default;
-}
-
-.result-col {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+.tooltip-header-row {
+    margin-bottom: 0.5rem; /* Adds visual gap between header and first row */
 }
